@@ -1,0 +1,33 @@
+﻿@{
+    ViewData["Title"] = "Benvenuto";
+    var username = Context.Session.GetString("Username");
+    var isAdmin = Context.Session.GetString("IsAdmin") == "true";
+}
+
+<div class="text-center mt-5">
+    <h1 class="display-4">🌤️ Benvenuto su MeteoApp!</h1>
+
+    @if (username != null)
+    {
+        <p class="lead mt-3">Ciao <strong>@username</strong>! Puoi cercare le previsioni meteo per qualsiasi città e salvare i dati nel tuo archivio.</p>
+
+        <div class="d-grid gap-2 d-sm-flex justify-content-sm-center mt-4">
+            <a asp-controller="WeatherDatas" asp-action="Previsioni" class="btn btn-primary btn-lg">🔎 Cerca Previsioni</a>
+            <a asp-controller="WeatherDatas" asp-action="Index" class="btn btn-outline-secondary btn-lg">📂 Storico Meteo</a>
+
+            @if (isAdmin)
+            {
+                <a asp-controller="Users" asp-action="Index" class="btn btn-warning btn-lg">👤 Gestione Utenti</a>
+            }
+        </div>
+    }
+    else
+    {
+        <p class="lead mt-3">Accedi o registrati per iniziare a esplorare le previsioni meteo!</p>
+
+        <div class="d-grid gap-2 d-sm-flex justify-content-sm-center mt-4">
+            <a asp-controller="Auth" asp-action="Login" class="btn btn-success btn-lg">🔐 Login</a>
+            <a asp-controller="Auth" asp-action="Register" class="btn btn-outline-primary btn-lg">📝 Registrati</a>
+        </div>
+    }
+</div>

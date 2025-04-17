@@ -1,0 +1,35 @@
+﻿@model MeteoApp.Models.WeatherData
+@{
+    ViewData["Title"] = "Dettagli previsione meteo";
+    var isAdmin = Context.Session.GetString("IsAdmin") == "true";
+}
+
+<div class="container mt-4">
+    <h2 class="mb-4 text-center">📄 Dettagli previsione meteo</h2>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <dl class="row">
+                <dt class="col-sm-4">🌍 Località</dt>
+                <dd class="col-sm-8">@Model.LocationName</dd>
+
+                <dt class="col-sm-4">📅 Data/Ora</dt>
+                <dd class="col-sm-8">@Model.Timestamp.ToString("f")</dd>
+
+                <dt class="col-sm-4">🌡️ Temperatura (°C)</dt>
+                <dd class="col-sm-8">@Model.CurrentTemperature</dd>
+
+                @if (isAdmin)
+                {
+                    <dt class="col-sm-4">👤 Utente</dt>
+                    <dd class="col-sm-8">@Model.Username</dd>
+                }
+            </dl>
+        </div>
+    </div>
+
+    <div class="mt-4 d-flex justify-content-between">
+        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">✏️ Modifica</a>
+        <a asp-action="Index" class="btn btn-secondary">← Torna all'elenco</a>
+    </div>
+</div>

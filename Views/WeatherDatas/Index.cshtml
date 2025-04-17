@@ -1,0 +1,169 @@
+﻿@model IEnumerable<MeteoApp.Models.WeatherData>
+@using System.Text.Json
+@{
+    ViewData["Title"] = "Storico Meteo";
+
+    var gruppiCitta = Model
+        .Where(d => !string.IsNullOrEmpty(d.LocationName))
+        .GroupBy(d => d.LocationName!)
+        .ToDictionary(
+            g => g.Key!,
+            g => g.OrderByDescending(x => x.Timestamp).Take(7).OrderBy(x => x.Timestamp).ToList()
+        );
+
+    int chartIndex = 0;
+    var scriptList = new List<string>();
+    var isAdmin = Context.Session.GetString("IsAdmin") == "true";
+}
+
+<div class="container">
+    <h2 class="display-5 text-center mb-4">📈 Temperature recenti per città</h2>
+
+    @if (isAdmin && ViewBag.Utenti != null)
+{
+    <form asp-action="Index" method="get" class="mb-4 row gx-2 align-items-end justify-content-center">
+        <div class="col-md-4">
+            <label class="form-label">Filtra per utente</label>
+            <select name="filtroUtente" class="form-select" onchange="this.form.submit()">
+                <option value="">-- Tutti gli utenti --</option>
+                    @foreach (var utente in (List<string>)ViewBag.Utenti)
+                    {
+                        if ((string?)ViewBag.FiltroUtente == utente)
+                        {
+                            <option value="@utente" selected="selected">@utente</option>
+                        }
+                        else
+                        {
+                            <option value="@utente">@utente</option>
+                        }
+                    }
+
+            </select>
+        </div>
+        <div class="col-md-auto">
+            <button type="submit" class="btn btn-primary mt-3">Applica</button>
+        </div>
+    </form>
+}
+
+
+    @foreach (var gruppo in gruppiCitta)
+    {
+        var idGrafico = $"graficoMeteo{chartIndex}";
+        var etichette = JsonSerializer.Serialize(gruppo.Value.Select(d => d.Timestamp.ToString("dd MMM HH:mm")));
+        var valori = JsonSerializer.Serialize(gruppo.Value.Select(d => d.CurrentTemperature));
+
+        <div class="card shadow-sm mb-5">
+            <div class="card-header bg-primary text-white">
+                🌍 @gruppo.Key
+            </div>
+            <div class="card-body">
+                <canvas id="@idGrafico" height="200"></canvas>
+            </div>
+        </div>
+
+        scriptList.Add($@"
+            const ctx{chartIndex} = document.getElementById('{idGrafico}').getContext('2d');
+            new Chart(ctx{chartIndex}, {{
+                type: 'line',
+                data: {{
+                    labels: {etichette},
+                    datasets: [{{
+                        label: 'Temperatura °C',
+                        data: {valori},
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 4,
+                        borderColor: '#0d6efd',
+                        backgroundColor: 'rgba(13, 110, 253, 0.2)'
+                    }}]
+                }},
+                options: {{
+                    responsive: true,
+                    plugins: {{
+                        legend: {{
+                            display: true
+                        }}
+                    }},
+                    scales: {{
+                        y: {{
+                            beginAtZero: true,
+                            title: {{
+                                display: true,
+                                text: 'Temperatura (°C)'
+                            }}
+                        }},
+                        x: {{
+                            title: {{
+                                display: true,
+                                text: 'Data/Ora'
+                            }}
+                        }}
+                    }}
+                }}
+            }});
+        ");
+
+        chartIndex++;
+    }
+
+    <hr class="my-5" />
+
+    <h2 class="display-6 mb-3">📂 Storico Completo</h2>
+
+    @if (ViewBag.Success != null)
+    {
+        <div class="alert alert-success">@ViewBag.Success</div>
+    }
+
+    <div class="table-responsive">
+        <table class="table table-hover table-striped align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th scope="col">Località</th>
+                    <th scope="col">Data/Ora</th>
+                    <th scope="col">Temperatura (°C)</th>
+                    @if (isAdmin)
+                    {
+                        <th scope="col">Utente</th>
+                    }
+                    <th scope="col" class="text-end">Azioni</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.OrderByDescending(m => m.Timestamp))
+                {
+                    <tr>
+                        <td>@item.LocationName</td>
+                        <td>@item.Timestamp.ToString("g")</td>
+                        <td>@item.CurrentTemperature</td>
+                        @if (isAdmin)
+                        {
+                            <td>@item.Username</td>
+                        }
+                        <td class="text-end">
+                            <div class="btn-group" role="group">
+                                <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-info btn-sm">Dettagli</a>
+                                <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-warning btn-sm">Modifica</a>
+                                <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-danger btn-sm">Elimina</a>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        @foreach (var script in scriptList)
+        {
+            @Html.Raw(script)
+        }
+    </script>
+}

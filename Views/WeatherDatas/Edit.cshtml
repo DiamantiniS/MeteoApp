@@ -1,0 +1,60 @@
+﻿@model MeteoApp.Models.WeatherData
+
+@{
+    ViewData["Title"] = "Modifica previsione meteo";
+    var isAdmin = Context.Session.GetString("IsAdmin") == "true";
+}
+
+<div class="container mt-4">
+    <h2 class="mb-4 text-center">✏️ Modifica previsione meteo</h2>
+
+    <form asp-action="Edit" method="post">
+        <input type="hidden" asp-for="Id" />
+
+        <div class="mb-3">
+            <label asp-for="LocationName" class="form-label">Località</label>
+            <input asp-for="LocationName" class="form-control" />
+            <span asp-validation-for="LocationName" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Timestamp" class="form-label">Data/Ora</label>
+            <input asp-for="Timestamp" class="form-control" type="datetime-local" />
+            <span asp-validation-for="Timestamp" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="CurrentTemperature" class="form-label">Temperatura (°C)</label>
+            <input asp-for="CurrentTemperature" class="form-control" type="number" step="any" />
+            <span asp-validation-for="CurrentTemperature" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Username" class="form-label">Utente</label>
+
+            @if (isAdmin)
+            {
+                <select asp-for="Username" class="form-select" asp-items="new SelectList((List<string>)ViewBag.Utenti)">
+                    <option value="">-- Seleziona utente --</option>
+                </select>
+            }
+            else
+            {
+                <input asp-for="Username" class="form-control" readonly />
+            }
+
+            <span asp-validation-for="Username" class="text-danger"></span>
+        </div>
+
+        <div class="d-flex justify-content-between">
+            <a asp-action="Index" class="btn btn-secondary">← Torna indietro</a>
+            <button type="submit" class="btn btn-primary">💾 Salva modifiche</button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}
